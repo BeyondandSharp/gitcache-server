@@ -27,11 +27,11 @@ func parseHttpParams(r *http.Request) HttpParams {
 		panic(err)
 	}
 	str := strings.Split(u.Path, "/")
-	//if len(str) < 4 {
-	//	panic("bad request params")
-	//}
+	if len(str) < 3 {
+		panic("bad request params")
+	}
 	//_Repository := str[1] + "/" + str[2] + "/" + str[3]
-	_Repository := u.Host + "/" + u.Path
+	_Repository := u.Host + u.Path
 	var _Gitservice = strings.Replace(u.RawQuery, "service=", "", -1)
 	if _Gitservice == "" {
 		if (strings.Index(str[3], "git") != -1) && (strings.Index(str[3], "pack") != -1) {
@@ -44,7 +44,7 @@ func parseHttpParams(r *http.Request) HttpParams {
 }
 
 func RequestFromRemote(r *http.Request) *http.Response {
-	var url = "https:/" + r.URL.RequestURI()
+	var url = "https://github.com" + r.URL.RequestURI()
 	client := &http.Client{}
 	reqest, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -304,7 +304,7 @@ func execShelldPipe(cmd string, args []string, w http.ResponseWriter, r *http.Re
 }
 
 func rinetGitRequest(w http.ResponseWriter, r *http.Request) bool {
-	url := "https:/" + r.URL.RequestURI()
+	url := "https://github.com" + r.URL.RequestURI()
 	log.Printf("redirect to github.com : %v,%v\n", url, r.Method)
 	client := &http.Client{}
 	req, err := http.NewRequest(r.Method, url, r.Body)
@@ -363,9 +363,9 @@ func cors(w http.ResponseWriter) {
 
 func CacheSysHandlerFunc(r *http.Request) string {
 	//get local cache repository count for homepage
-	if strings.Contains(r.URL.Path, "gitcache/system/info") {
+	if strings.Contains("/github.com"+r.URL.Path, "gitcache/system/info") {
 		return GetLocalMirrorsInfo()
-	} else if strings.Contains(r.URL.Path, "gitcache/system/recommend") {
+	} else if strings.Contains("/github.com"+r.URL.Path, "gitcache/system/recommend") {
 		go Stats("visit")
 		return GetRecommentRepos()
 
@@ -386,14 +386,14 @@ func IsBlacklist(url string) bool {
 func RequestHandler(basedir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*") // resolve cors
-		if strings.Contains(r.URL.Path, "gitcache/system") || strings.Contains(r.URL.Path, "/favicon.ico") {
+		if strings.Contains("/github.com"+r.URL.Path, "gitcache/system") || strings.Contains("/github.com"+r.URL.Path, "/favicon.ico") {
 			cors(w)
 			w.WriteHeader(200)
 			w.Write([]byte(CacheSysHandlerFunc(r)))
 			return
-		} else if strings.Contains(r.URL.Path, "gitcache/image") {
+		} else if strings.Contains("/github.com"+r.URL.Path, "gitcache/image") {
 			cors(w)
-			imagurl := "https:" + strings.Replace(r.URL.Path, "gitcache/image", "", -1)
+			imagurl := "https:" + strings.Replace("/github.com"+r.URL.Path, "gitcache/image", "", -1)
 			if CacheExists(imagurl) {
 				log.Printf("check image exists: %s true\n", imagurl)
 				w.WriteHeader(200)
@@ -406,26 +406,26 @@ func RequestHandler(basedir string) http.HandlerFunc {
 		} else if strings.Contains(r.URL.Path, "gitcache/stat") {
 			cors(w)
 			w.WriteHeader(200)
-			if strings.Contains(r.URL.Path, "gitcache/stat/search") {
+			if strings.Contains("/github.com"+r.URL.Path, "gitcache/stat/search") {
 				go Stats("search")
-			} else if strings.Contains(r.URL.Path, "gitcache/stat/vipvisit") {
+			} else if strings.Contains("/github.com"+r.URL.Path, "gitcache/stat/vipvisit") {
 				go Stats("vipvisit")
-			} else if strings.Contains(r.URL.Path, "gitcache/stat/githubapp") {
+			} else if strings.Contains("/github.com"+r.URL.Path, "gitcache/stat/githubapp") {
 				go Stats("githubapp")
-			} else if strings.Contains(r.URL.Path, "gitcache/stat/githubdesktop") {
+			} else if strings.Contains("/github.com"+r.URL.Path, "gitcache/stat/githubdesktop") {
 				go Stats("githubdesktop")
-			} else if strings.Contains(r.URL.Path, "gitcache/stat/githubcli") {
+			} else if strings.Contains("/github.com"+r.URL.Path, "gitcache/stat/githubcli") {
 				go Stats("githubcli")
-			} else if strings.Contains(r.URL.Path, "gitcache/stat/gitexe") {
+			} else if strings.Contains("/github.com"+r.URL.Path, "gitcache/stat/gitexe") {
 				go Stats("gitexe")
 			}
 			return
-		} else if IsBlacklist(r.URL.Path) {
+		} else if IsBlacklist("/github.com" + r.URL.Path) {
 			cors(w)
 			w.WriteHeader(403)
 			return
 		}
-		log.Printf("client send git request: %s %s %s %s\n", r.RemoteAddr, r.Method, r.URL.Path, r.Proto)
+		log.Printf("client send git request: %s %s %s %s\n", r.RemoteAddr, r.Method, "/github.com"+r.URL.Path, r.Proto)
 		var httpParams HttpParams = parseHttpParams(r)
 		log.Printf("git params: %+v\n", httpParams)
 		if ((r.Method == "GET") && (httpParams.IsInfoReq)) || ((r.Method != "GET") && (!httpParams.IsInfoReq)) {

@@ -31,7 +31,7 @@ func GetRepoStar(w http.ResponseWriter, r *http.Request) {
 	//sample: https://api.github.com/repos/git-cloner/gitcache
 	//test : http://127.0.0.1:5001/gitcache/star/git-cloner/gitcache
 	github_token := os.Getenv("GITHUB_TOKEN")
-	url := "https://api.github.com/repos/" + strings.Replace(r.URL.RequestURI(), "/gitcache/star/", "", -1)
+	url := "https://api.github.com/repos/" + strings.Replace("/github.com"+r.URL.RequestURI(), "/gitcache/star/", "", -1)
 	log.Printf("get star url : %v \n", url)
 	contents := httpGet(url, github_token)
 	//get stat

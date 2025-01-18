@@ -20,17 +20,18 @@ func parseHttpParams(realurl string) HttpParams {
 		panic(err)
 	}
 	str := strings.Split(u.Path, "/")
-	if len(str) < 4 {
+	if len(str) < 3 {
 		panic("bad request params")
 	}
-	_Repository := str[1] + "/" + str[2] + "/" + str[3]
+	//_Repository := str[1] + "/" + str[2] + "/" + str[3]
+	_Repository := u.Host + u.Path
 	var _Gitservice = strings.Replace(u.RawQuery, "service=", "", -1)
 	if _Gitservice == "" {
-		if (strings.Index(str[4], "git") != -1) && (strings.Index(str[4], "pack") != -1) {
-			_Gitservice = str[4]
+		if (strings.Index(str[3], "git") != -1) && (strings.Index(str[3], "pack") != -1) {
+			_Gitservice = str[3]
 		}
 	}
-	_IsInfoReq := (str[4] == "info")
+	_IsInfoReq := (str[3] == "info")
 	var httpParams HttpParams = HttpParams{Repository: _Repository, Gitservice: _Gitservice, IsInfoReq: _IsInfoReq}
 	return httpParams
 }
@@ -134,29 +135,29 @@ func imageExists(url string) bool {
 
 func GithubAuth(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
-	log.Printf("github auth: " + r.URL.Path)
+	log.Printf("github auth: " + "/github.com" + r.URL.Path)
 }
 
 func RequestHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if strings.Contains(r.URL.Path, "gitcache/download") {
+		if strings.Contains("/github.com"+r.URL.Path, "gitcache/download") {
 			DownloadFile(w, r)
 			return
 		}
-		if strings.Contains(r.URL.Path, "gitcache/auth") {
+		if strings.Contains("/github.com"+r.URL.Path, "gitcache/auth") {
 			GithubAuth(w, r)
 			return
 		}
-		if strings.Contains(r.URL.Path, "gitcache/star") {
+		if strings.Contains("/github.com"+r.URL.Path, "gitcache/star") {
 			GetRepoStar(w, r)
 			return
 		}
-		if strings.Contains(r.URL.Path, "/favicon.ico") {
+		if strings.Contains("/github.com"+r.URL.Path, "/favicon.ico") {
 			return
 		}
-		var realurl = preProcUrl(r.URL.RequestURI())
+		var realurl = preProcUrl("/github.com" + r.URL.RequestURI())
 		if realurl == "" {
-			log.Printf("unknown token : %v\n", r.URL.RequestURI())
+			log.Printf("unknown token : %v\n", "/github.com"+r.URL.RequestURI())
 			w.WriteHeader(404)
 			return
 		}
