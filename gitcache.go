@@ -27,17 +27,18 @@ func parseHttpParams(r *http.Request) HttpParams {
 		panic(err)
 	}
 	str := strings.Split(u.Path, "/")
-	if len(str) < 4 {
-		panic("bad request params")
-	}
-	_Repository := str[1] + "/" + str[2] + "/" + str[3]
+	//if len(str) < 4 {
+	//	panic("bad request params")
+	//}
+	//_Repository := str[1] + "/" + str[2] + "/" + str[3]
+	_Repository := u.Host + "/" + u.Path
 	var _Gitservice = strings.Replace(u.RawQuery, "service=", "", -1)
 	if _Gitservice == "" {
-		if (strings.Index(str[4], "git") != -1) && (strings.Index(str[4], "pack") != -1) {
-			_Gitservice = str[4]
+		if (strings.Index(str[3], "git") != -1) && (strings.Index(str[3], "pack") != -1) {
+			_Gitservice = str[3]
 		}
 	}
-	_IsInfoReq := (str[4] == "info")
+	_IsInfoReq := (str[3] == "info")
 	var httpParams HttpParams = HttpParams{Repository: _Repository, Gitservice: _Gitservice, IsInfoReq: _IsInfoReq}
 	return httpParams
 }
